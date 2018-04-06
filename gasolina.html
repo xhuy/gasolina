@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title></title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+         table, th, td {
+         border: 1px solid black;
+         border-collapse: collapse;
+         }
+         th, td {
+         padding: 15px;
+         }
+         th {
+         text-align: left;
+         }
+         table {
+         border-spacing: 5px;
+         }
+         .guide {
+         text-decoration: underline;
+         text-align: center;
+         }
+         .odd {
+         color: #fff;
+         background: #666;
+         }
+         .even {
+         color: #666;
+         }
+         .hot {
+         border: 1px solid #f00;
+         }
+      </style>
+   </head>
+   <body>
+   
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+      
+	  <link rel="stylesheet" href="static/css/bootstrap.css"/>
+      <link rel="stylesheet" href="static/css/bootstrap-theme.css"/>
+      <script src="static/js/bootstrap.min.js"></script>
+	  
+	  <div id="divMagna"></div>
+      </br>
+      </br>
+      </br>
+      <div id="divPremium"></div>
+   </body>
+</html>
+
+
+<script>
+var urls = [
+    "http://api-reportediario.cre.gob.mx/api/EstacionServicio/Petroliferos?entidadId=19&municipioId=006",
+    "http://api-reportediario.cre.gob.mx/api/EstacionServicio/Petroliferos?entidadId=19&municipioId=026",
+    "http://api-reportediario.cre.gob.mx/api/EstacionServicio/Petroliferos?entidadId=19&municipioId=039",
+    "http://api-reportediario.cre.gob.mx/api/EstacionServicio/Petroliferos?entidadId=19&municipioId=046",
+    "http://api-reportediario.cre.gob.mx/api/EstacionServicio/Petroliferos?entidadId=19&municipioId=019",
+    "http://api-reportediario.cre.gob.mx/api/EstacionServicio/Petroliferos?entidadId=19&municipioId=048"
+]
+
+function populateTable(jsonArray, div) {
+
+    var obj = jsonArray;
+    var table = $("<table />");
+	table.attr("data-toggle","table");
+	table.attr("data-sort-order","desc");
+    table[0].border = "1";
+    var columns = Object.keys(obj[0]);
+    var columnCount = columns.length;
+    var row = $(table[0].insertRow(-1));
+    for (var i = 0; i < columnCount; i++) {
+        var headerCell = $("<th />");
+		headerCell.attr("data-field",columns[i]);
+		headerCell.attr("data-sortable","true");
+        headerCell.html([columns[i]]);
+        row.append(headerCell);
+    }
+
+    for (var i = 0; i < obj.length; i++) {
+        row = $(table[0].insertRow(-1));
+        for (var j = 0; j < columnCount; j++) {
+            var cell = $("<td />");
+            cell.html(obj[i][columns[j]]);
+            row.append(cell);
+        }
+    }
+    var idDiv = '#' + div + '';
+    var dvTable = $(idDiv);
+    dvTable.html("");
+    dvTable.append(table);
+
+}
+
+function httpGetAsync(theUrl, callback) {
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function() {
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+            callback(xmlHttp.responseText);
+    }
+    xmlHttp.open("GET", theUrl, true); // true for asynchronous 
+    xmlHttp.send(null);
+}
+
+var jsonMagnaTabla = [];
+var jsonPremiumTabla = [];
+var urlsProcessed = 0;
+
+urls.forEach(function(url) {
+    var jsonMagna = [];
+    var jsonPremium = [];
+    httpGetAsync(url, function(response) {
+        json = JSON.parse(response);
+        for (var i = 0; i < json.length; i++) {
+            delete json[i].EntidadFederativaId;
+            delete json[i].Producto;
+            delete json[i].SubProducto;
+            delete json[i].PrecioMaximo;
+            switch (json[i].MunicipioId) {
+                case 006:
+                    json[i].MunicipioId = 'Apodaca';
+                    break;
+                case 26:
+                    json[i].MunicipioId = 'Guadalupe';
+                    break;
+                case 039:
+                    json[i].MunicipioId = 'Monterrey';
+                    break;
+                case 46:
+                    json[i].MunicipioId = 'San Nicolas de los Garza';
+                    break;
+                case 019:
+                    json[i].MunicipioId = 'San Pedro Garza Garcia';
+                    break;
+                case 048:
+                    json[i].MunicipioId = 'Santa Catarina';
+                    break;
+
+            }
+
+        }
+
+        jsonMagna = $.grep(json, function(json, i) {
+            return json.Marca === 'Magna PEMEX';
+        });
+
+        jsonMagna.sort(function(a, b) {
+            return a.PrecioVigente - b.PrecioVigente;
+        });
+
+        jsonMagnaTabla = jsonMagnaTabla.concat(jsonMagna.slice(0, 5));
+
+        jsonPremium = $.grep(json, function(json, i) {
+            return json.Marca === 'Premium PEMEX';
+        });
+
+        jsonPremium.sort(function(a, b) {
+            return a.PrecioVigente - b.PrecioVigente;
+        });
+
+        jsonPremiumTabla = jsonPremiumTabla.concat(jsonPremium.slice(0, 5));
+
+        urlsProcessed++;
+
+        if (urlsProcessed === urls.length) {
+		
+		jsonMagnaTabla.sort(function(a, b) {
+            return a.PrecioVigente - b.PrecioVigente;
+        });
+		
+		jsonPremiumTabla.sort(function(a, b) {
+            return a.PrecioVigente - b.PrecioVigente;
+        });
+            populateTable(jsonMagnaTabla, 'divMagna');
+            populateTable(jsonPremiumTabla, 'divPremium');
+        }
+
+    });
+
+});
+
+</script>
