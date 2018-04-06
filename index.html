@@ -41,6 +41,7 @@
 	  <link rel="stylesheet" href="static/css/bootstrap.css"/>
       <link rel="stylesheet" href="static/css/bootstrap-theme.css"/>
       <script src="static/js/bootstrap.min.js"></script>
+	  <script src="node_modules/axios/dist/axios.min.js"></script>
 	  
 	  <div id="divMagna"></div>
       </br>
@@ -94,14 +95,9 @@ function populateTable(jsonArray, div) {
 
 }
 
-function httpGetAsync(theUrl, callback) {
-    var xmlHttp = new XMLHttpRequest();
-    xmlHttp.onreadystatechange = function() {
-        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-            callback(xmlHttp.responseText);
-    }
-    xmlHttp.open("GET", theUrl, true); // true for asynchronous 
-    xmlHttp.send(null);
+async function httpGetAsync(theUrl, callback) {
+    const response = await axios.get(theUrl);
+    callback(response);
 }
 
 var jsonMagnaTabla = [];
@@ -112,7 +108,7 @@ urls.forEach(function(url) {
     var jsonMagna = [];
     var jsonPremium = [];
     httpGetAsync(url, function(response) {
-        json = JSON.parse(response);
+        json = response.data;
         for (var i = 0; i < json.length; i++) {
             delete json[i].EntidadFederativaId;
             delete json[i].Producto;
